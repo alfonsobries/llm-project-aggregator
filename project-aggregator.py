@@ -4,6 +4,7 @@ import os
 import sys
 import subprocess
 import mimetypes
+import argparse
 
 def is_binary_file(path):
     mime_type, _ = mimetypes.guess_type(path)
@@ -12,11 +13,12 @@ def is_binary_file(path):
     else:
         return False
 
-def get_valid_files():
+def get_valid_files(directory):
     # Use git to get a list of tracked and unignored files
     try:
         result = subprocess.check_output(
             ['git', 'ls-files'],
+            cwd=directory,
             stderr=subprocess.STDOUT
         )
         files = result.decode('utf-8').split('\n')
@@ -27,8 +29,17 @@ def get_valid_files():
         sys.exit(1)
 
 def main():
-    valid_files = get_valid_files()
-    output_filename = 'aggregated_project.txt'
+    parser = argparse.ArgumentParser(description='Aggregate project files into a single file.')
+    parser.add_argument('-d', '--directory', type=str, default=os.getcwd(),
+                        help='The directory of the project (default: current directory)')
+    parser.add_argument('-o', '--output', type=str, default='aggregated_project.txt',
+                        help='The output file path and name (default: aggregated_project.txt)')
+    args = parser.parse_args()
+
+    project_dir = os.path.abspath(args.directory)
+    output_filename = args.output
+
+    valid_files = get_valid_files(project_dir)
 
     # Collect file information for the index
     file_info_list = []
@@ -41,7 +52,7 @@ def main():
         if '/.' in relative_path or relative_path.startswith('.'):
             continue
 
-        absolute_path = os.path.join(os.getcwd(), relative_path)
+        absolute_path = os.path.join(project_dir, relative_path)
 
         # Ignore binary files
         if is_binary_file(absolute_path):
