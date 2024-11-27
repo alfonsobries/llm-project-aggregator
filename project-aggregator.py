@@ -54,6 +54,10 @@ def main():
 
         absolute_path = os.path.join(project_dir, relative_path)
 
+        # **Check if path is a file before proceeding**
+        if not os.path.isfile(absolute_path):
+            continue
+
         # Ignore binary files
         if is_binary_file(absolute_path):
             continue
